@@ -127,12 +127,17 @@ class ConversionTests(unittest.TestCase):
             deployment("via-endpoint", mode=None, supported_endpoints=["/v1/responses"]),
             deployment("embedding", mode="embedding"),
             deployment("embedding-conflict", mode="embedding", supported_endpoints=["/responses"]),
-            deployment("conflicting-endpoint", supported_endpoints=["/v1/embeddings"]),
+            deployment("chat-without-endpoints", supported_endpoints=[]),
+            deployment("non-chat-endpoint", mode=None, supported_endpoints=["/v1/embeddings"]),
+            deployment("additional-endpoint", mode="completion", supported_endpoints=["/responses"]),
             deployment("unknown", mode=None, supports_vision=True),
             deployment("mixed"),
             deployment("mixed", mode="embedding"),
         )
-        self.assertEqual([model["slug"] for model in catalog], ["chat", "responses", "via-endpoint"])
+        self.assertEqual(
+            [model["slug"] for model in catalog],
+            ["chat", "responses", "via-endpoint", "chat-without-endpoints", "additional-endpoint"],
+        )
 
 
 class MockLiteLLMHandler(BaseHTTPRequestHandler):
@@ -162,7 +167,7 @@ class HTTPTests(unittest.TestCase):
             ("127.0.0.1", 0),
             upstream_url=f"http://127.0.0.1:{self.upstream.server_port}/model/info",
             api_key="upstream-secret",
-            upstream_timeout=0.2,
+            upstream_timeout=2,
         )
         self.run_server(self.proxy)
 
@@ -229,6 +234,7 @@ class HTTPTests(unittest.TestCase):
                 )
 
     def test_upstream_timeout(self):
+        self.proxy.upstream_timeout = 0.2
         self.upstream.stall.set()
         self.assertEqual(
             self.request(expected_status=502),

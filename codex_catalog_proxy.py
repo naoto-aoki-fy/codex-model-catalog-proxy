@@ -27,11 +27,11 @@ INPUT_MODALITIES = ("text", *MODALITY_FLAGS)
 
 def supports_chat(info: dict[str, Any]) -> bool:
     mode = info.get("mode")
-    if mode is not None and mode not in CHAT_MODES:
+    if mode == "embedding":
         return False
+    if mode in CHAT_MODES:
+        return True
     endpoints = info.get("supported_endpoints")
-    if endpoints is None:
-        return mode in CHAT_MODES
     return isinstance(endpoints, list) and any(path in endpoints for path in CHAT_ENDPOINTS)
 
 
